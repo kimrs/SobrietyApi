@@ -7,7 +7,6 @@ using MongoDB.Driver;
 
 namespace SobrietyApi.Services
 {
-
     public class LeaderboardService : ILeaderboardService
     {
         private readonly IMongoCollection<Record> _records;
@@ -22,53 +21,29 @@ namespace SobrietyApi.Services
             _logger = logger;
         }
 
-        public void ProcessTodaysAchievements()
-        {
-            _logger.Log(LogLevel.Information, "Processing achievements");
-            
-            var records = _records.Find<Record>(record => true).ToList();
-            foreach(var record in records)
+        public void AddDailyGoal()
+            => _records.UpdateMany(r => true, Builders<Record>.Update.AddToSet("DailyAchievements", new DailyGoal() { Date = DateTime.Today }));
+
+        private static int ComputeScore(Record record) 
+            => record.DailyAchievements 
+            .SelectMany(a => new bool[]
             {
-                var lastDate = record.DailyAchievements.LastOrDefault().Date; 
-                var timeAdjustedToday = DateTime.Today.AddHours(-2); 
-                if(lastDate >= timeAdjustedToday)
-                    continue;
-
-                record.Score = record.DailyAchievements
-                    .SelectMany(achivement => new bool[]
-                    {
-                        achivement.NoAlkohol, 
-                        achivement.NoSnacking, 
-                        achivement.WorkedOut 
-                    })
-                    .Where(point => point)
-                    .Count();
-                
-                var goalList = record.DailyAchievements.ToList(); 
-                goalList.Add( new DailyGoal() { Date = DateTime.Today } );
-                record.DailyAchievements = goalList.ToArray();
-
-                _records.ReplaceOne(r => r.Id == record.Id, record);
-            }
-        }
+                a.NoAlkohol, 
+                a.NoSnacking, 
+                a.WorkedOut 
+            })
+            .Where(point => point)
+            .Count();
 
         public List<RecordMinimal> Get() 
             => _records.Find(record => true)
-            .Project(p => new RecordMinimal { Name = p.Name, Score = p.Score})
+            .Project(p => new RecordMinimal { Name = p.Name, Score = p.Score })
             .ToList();
 
         public Record Get(string id) 
             => _records.Find<Record>(record => record.Id == id)
-            .Project(x => x.SkipOldAchievements())
+            .Project(x => x.RemoveOldAchievements())
             .FirstOrDefault();
-
-        public Record Create(RecordMinimal recordMinimal)
-        {
-            var record = recordMinimal.ToRecord();
-            _records.InsertOne(record);
-
-            return record;
-        }
 
         public void Update(Record recordIn) =>
             _records.ReplaceOne(record => record.Id == recordIn.Id, recordIn);
@@ -78,5 +53,13 @@ namespace SobrietyApi.Services
 
         public void Remove(string id) => 
             _records.DeleteOne(record => record.Id == id);
+
+        public Record Create(RecordMinimal recordMinimal)
+        {
+            var record = recordMinimal.ToRecord();
+            _records.InsertOne(record);
+
+            return record;
+        }
     }
 }

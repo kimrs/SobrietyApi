@@ -1,19 +1,17 @@
 using System;
 using System.Linq;
-using MongoDB.Bson;
 using SobrietyApi.Models;
 
 namespace SobrietyApi
 {
     public static class ModelExtensions
     {
-        public static Record SkipOldAchievements(this Record record)
+        public static Record RemoveOldAchievements(this Record record)
         {
-            return new Record()
+            return new Record(record.Score)
             {
                 Id = record.Id,
                 Name = record.Name,
-                Score = record.Score,
                 DailyAchievements = new DailyGoal[] 
                 {
                     record.DailyAchievements.LastOrDefault()
@@ -26,7 +24,6 @@ namespace SobrietyApi
             return new Record() 
             {
                 Name = recordMinimal.Name,
-                Score = recordMinimal.Score,
                 DailyAchievements = new DailyGoal[]
                 {
                     new DailyGoal()
