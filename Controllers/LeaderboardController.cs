@@ -9,9 +9,9 @@ namespace SobrietyApi.Controllers
     [ApiController]
     public class LeaderboardController : ControllerBase
     {
-        private readonly LeaderboardService _leaderboardService;
+        private readonly ILeaderboardService _leaderboardService;
 
-        public LeaderboardController(LeaderboardService leaderboardService)
+        public LeaderboardController(ILeaderboardService leaderboardService)
         {
             _leaderboardService = leaderboardService;
         }

@@ -7,17 +7,13 @@ using MongoDB.Driver;
 
 namespace SobrietyApi.Services
 {
-    public interface ILeaderboardService
-    {
-        void ProcessTodaysAchievements();
-    }
 
     public class LeaderboardService : ILeaderboardService
     {
         private readonly IMongoCollection<Record> _records;
-        private readonly ILogger<LeaderboardService> _logger;
+        private readonly ILogger<ILeaderboardService> _logger;
 
-        public LeaderboardService(ISoberDatabaseSettings settings, ILogger<LeaderboardService> logger)
+        public LeaderboardService(ISoberDatabaseSettings settings, ILogger<ILeaderboardService> logger)
         {
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
