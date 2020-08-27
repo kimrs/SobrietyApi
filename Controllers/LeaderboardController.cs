@@ -1,6 +1,7 @@
 using SobrietyApi.Models;
 using SobrietyApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 
 namespace SobrietyApi.Controllers
@@ -33,6 +34,7 @@ namespace SobrietyApi.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public ActionResult<Record> Create([FromBody] RecordMinimal recordMinimal)
         {
             var record = _leaderboardService.Create(recordMinimal);
@@ -41,6 +43,7 @@ namespace SobrietyApi.Controllers
         }
 
         [HttpPut]
+        [Authorize]
         public IActionResult Update(Record recordIn)
         {
             var record = _leaderboardService.Get(recordIn.Id);
@@ -54,6 +57,7 @@ namespace SobrietyApi.Controllers
         }
 
         [HttpDelete("{id:length(24)}")]
+        [Authorize]
         public IActionResult Delete(string id)
         {
             var record = _leaderboardService.Get(id);

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 using SobrietyApi.Models;
 using SobrietyApi.Services;
@@ -32,6 +33,16 @@ namespace SobrietyApi
         {
             services.Configure<SoberDatabaseSettings>(Configuration.GetSection(nameof(SoberDatabaseSettings)));
 
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.Authority = "https://sober.eu.auth0.com/";
+                options.Audience = "https://soberapi.solstad.dev/";
+            });
+
             services.AddLogging(c => c.AddConsole());
             services.AddSingleton<ISoberDatabaseSettings>(sp => sp.GetRequiredService<IOptions<SoberDatabaseSettings>>().Value);
             services.AddSingleton<ILeaderboardService, LeaderboardService>();
@@ -50,6 +61,8 @@ namespace SobrietyApi
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
