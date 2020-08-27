@@ -33,7 +33,9 @@ namespace SobrietyApi
             services.Configure<SoberDatabaseSettings>(Configuration.GetSection(nameof(SoberDatabaseSettings)));
 
             services.AddSingleton<ISoberDatabaseSettings>(sp => sp.GetRequiredService<IOptions<SoberDatabaseSettings>>().Value);
-            services.AddSingleton<LeaderboardService>();
+            services.AddSingleton<ILeaderboardService, LeaderboardService>();
+            services.AddLogging(c => c.AddConsole());
+            services.AddHostedService<AchievementProcessingService>();
             services.AddControllers().AddNewtonsoftJson(options => options.UseMemberCasing());
         }
 

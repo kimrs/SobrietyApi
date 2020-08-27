@@ -1,10 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-
+using Microsoft.Extensions.Logging;
 using SobrietyApi.Models;
 using MongoDB.Driver;
-
 
 namespace SobrietyApi.Services
 {
@@ -16,21 +15,29 @@ namespace SobrietyApi.Services
     public class LeaderboardService : ILeaderboardService
     {
         private readonly IMongoCollection<Record> _records;
+        private readonly ILogger<LeaderboardService> _logger;
 
-        public LeaderboardService(ISoberDatabaseSettings settings)
+        public LeaderboardService(ISoberDatabaseSettings settings, ILogger<LeaderboardService> logger)
         {
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
 
             _records = database.GetCollection<Record>(settings.RecordsCollectionName);
+            _logger = logger;
         }
-
 
         public void ProcessTodaysAchievements()
         {
+            _logger.Log(LogLevel.Information, "Processing achievements");
+            
             var records = _records.Find<Record>(record => true).ToList();
             foreach(var record in records)
             {
+                var lastDate = record.DailyAchievements.LastOrDefault().Date; 
+                var timeAdjustedToday = DateTime.Today.AddHours(-2); 
+                if(lastDate >= timeAdjustedToday)
+                    continue;
+
                 record.Score = record.DailyAchievements
                     .SelectMany(achivement => new bool[]
                     {
@@ -40,7 +47,10 @@ namespace SobrietyApi.Services
                     })
                     .Where(point => point)
                     .Count();
-                record.DailyAchievements.ToList().Add( new DailyGoal() { Date = DateTime.Today } );
+                
+                var goalList = record.DailyAchievements.ToList(); 
+                goalList.Add( new DailyGoal() { Date = DateTime.Today } );
+                record.DailyAchievements = goalList.ToArray();
 
                 _records.ReplaceOne(r => r.Id == record.Id, record);
             }
@@ -64,10 +74,8 @@ namespace SobrietyApi.Services
             return record;
         }
 
-        public void Update(Record recordIn) 
-        {
+        public void Update(Record recordIn) =>
             _records.ReplaceOne(record => record.Id == recordIn.Id, recordIn);
-        }
 
         public void Remove(Record recordIn) =>
             _records.DeleteOne(record => record.Id == recordIn.Id);
